@@ -1,14 +1,15 @@
-const dotenv = require("dotenv");
-const { MongoClient } = require("mongodb");
+import dotenv from "dotenv";
+import { MongoClient } from "mongodb";
+
 dotenv.config();
 
 const client = new MongoClient(process.env.CONNECTIONSTRING);
+let db;
 
-async function start() {
-    await client.connect();
-    module.exports = client.db();
-    const app = require("./app");
-    app.listen(process.env.PORT);
+export async function connectDB() {
+    if (!db) {
+        await client.connect();
+        db = client.db();
+    }
+    return db;
 }
-
-start();
