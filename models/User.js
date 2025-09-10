@@ -1,11 +1,6 @@
 import validator from "validator";
 import bcrypt from "bcryptjs";
-import { connectDB } from "../db.js";
-
-async function getUsersCollection() {
-    const db = await connectDB();
-    return db.collection("users");
-}
+import { getCollection } from "../db.js";
 
 class User {
     constructor(data) {
@@ -41,7 +36,7 @@ class User {
         this.cleanUp();
 
         try {
-            const usersCollection = await getUsersCollection();
+            const usersCollection = await getCollection("users");
             const attemptedUser = await usersCollection.findOne({ username: this.data.username });
             if (attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
                 return "Congrats, you dumb fuck.";
@@ -61,7 +56,7 @@ class User {
         // Only if there are no validation errors
         // then save user data into database
         if (!this.errors.length) {
-            const usersCollection = await getUsersCollection();
+            const usersCollection = await getCollection("users");
             // hash user password
             const salt = bcrypt.genSaltSync(10);
             this.data.password = bcrypt.hashSync(this.data.password, salt);
