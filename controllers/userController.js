@@ -3,15 +3,19 @@ import User from "../models/User.js";
 export async function login(req, res) {
     try {
         let user = new User(req.body);
-        const result = await user.login();
-        req.session.user = { username: user.data.username };
-        res.send(result);
+        const dbUser = await user.login();
+        req.session.user = { username: dbUser.username };
+        req.session.save(() => res.redirect("/"));
     } catch (error) {
-        res.send(error);
+        res.send(error.message);
     }
 }
 
-export function logout() {}
+export function logout(req, res) {
+    req.session.destroy(function () {
+        res.redirect("/");
+    });
+}
 
 export async function register(req, res) {
     let user = new User(req.body);

@@ -35,16 +35,12 @@ class User {
     async login() {
         this.cleanUp();
 
-        try {
-            const usersCollection = await getCollection("users");
-            const attemptedUser = await usersCollection.findOne({ username: this.data.username });
-            if (attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
-                return "Congrats, you dumb fuck.";
-            } else {
-                return "Invalid username / password.";
-            }
-        } catch (error) {
-            console.log(error);
+        const usersCollection = await getCollection("users");
+        const attemptedUser = await usersCollection.findOne({ username: this.data.username });
+        if (attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
+            return attemptedUser;
+        } else {
+            throw new Error("Invalid username / password.");
         }
     }
 
