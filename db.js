@@ -5,7 +5,7 @@ dotenv.config();
 
 export const client = new MongoClient(process.env.CONNECTIONSTRING);
 
-export async function getCollection(name) {
+export function getCollection(name) {
     const db = client.db(process.env.DB_NAME);
     return db.collection(name);
 }

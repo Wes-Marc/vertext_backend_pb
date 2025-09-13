@@ -1,6 +1,7 @@
 import express from "express";
 import session from "express-session";
 import MongoStore from "connect-mongo";
+import flash from "connect-flash";
 import { client } from "./db.js";
 import router from "./router.js";
 
@@ -14,6 +15,7 @@ const sessionOptions = session({
 });
 
 app.use(sessionOptions);
+app.use(flash());
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
