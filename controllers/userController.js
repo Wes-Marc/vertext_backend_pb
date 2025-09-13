@@ -7,7 +7,8 @@ export async function login(req, res) {
         req.session.user = { username: dbUser.username };
         req.session.save(() => res.redirect("/"));
     } catch (error) {
-        res.send(error.message);
+        req.flash("errors", error.message);
+        req.session.save(() => res.redirect("/"));
     }
 }
 
@@ -19,11 +20,13 @@ export function logout(req, res) {
 
 export async function register(req, res) {
     let user = new User(req.body);
-    await user.register();
-    if (user.errors.length) {
-        res.send(user.errors);
-    } else {
-        res.send("There are no errors.");
+    try {
+        await user.register();
+        req.session.user = { username: user.data.username };
+        req.session.save(() => res.redirect("/"));
+    } catch (regErrors) {
+        regErrors.forEach(error => req.flash("regErrors", error));
+        req.session.save(() => res.redirect("/"));
     }
 }
 
@@ -31,6 +34,6 @@ export function home(req, res) {
     if (req.session.user) {
         res.render("home-dashboard", { username: req.session.user.username });
     } else {
-        res.render("home-guest");
+        res.render("home-guest", { errors: req.flash("errors"), regErrors: req.flash("regErrors") });
     }
 }
