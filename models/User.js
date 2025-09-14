@@ -1,5 +1,6 @@
 import validator from "validator";
 import bcrypt from "bcryptjs";
+import md5 from "md5";
 import { getCollection } from "../db.js";
 
 class User {
@@ -50,7 +51,9 @@ class User {
         const usersCollection = getCollection("users");
         const attemptedUser = await usersCollection.findOne({ username: this.data.username });
         if (attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
-            return attemptedUser;
+            this.data = attemptedUser;
+            this.getAvatar();
+            return this.data;
         } else {
             throw new Error("Invalid username / password.");
         }
@@ -69,9 +72,14 @@ class User {
             const salt = bcrypt.genSaltSync(10);
             this.data.password = bcrypt.hashSync(this.data.password, salt);
             await usersCollection.insertOne(this.data);
+            this.getAvatar();
         } else {
             throw this.errors;
         }
+    }
+
+    getAvatar() {
+        this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`;
     }
 }
 
