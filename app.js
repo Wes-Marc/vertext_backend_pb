@@ -11,11 +11,16 @@ const sessionOptions = session({
     store: MongoStore.create({ client: client, dbName: process.env.DB_NAME }),
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24, httpOnly: true, sameSite: "strict" }
+    cookie: { maxAge: 1000 * 60 * 60 * 24, httpOnly: true, sameSite: "strict" },
 });
 
 app.use(sessionOptions);
 app.use(flash());
+
+app.use((req, res, next) => {
+    res.locals.user = req.session.user;
+    next();
+});
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
