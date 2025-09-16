@@ -1,5 +1,6 @@
 import { getCollection } from "../db.js";
 import { ObjectId } from "mongodb";
+import User from "./User.js";
 
 class Post {
     constructor(data, userId) {
@@ -30,12 +31,60 @@ class Post {
         this.cleanUp();
         this.validate();
 
-        if (!this.errors.length) {
-            // Save post into database
+        try {
+            if (!this.errors.length) {
+                // Save post into database
+                const postsCollection = getCollection("posts");
+                const result = await postsCollection.insertOne(this.data);
+                return result;
+            }
+        } catch (dbError) {
+            console.error("Database error in Post.create:", dbError);
+            throw new Error("Database operation failed");
+        }
+    }
+
+    async findSingleById(id) {
+        if (typeof id !== "string" || !ObjectId.isValid(id)) return null;
+
+        try {
             const postsCollection = getCollection("posts");
-            await postsCollection.insertOne(this.data);
-        } else {
-            throw this.errors;
+            let posts = await postsCollection
+                .aggregate([
+                    { $match: { _id: ObjectId.createFromHexString(id) } },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "author",
+                            foreignField: "_id",
+                            as: "authorDocument",
+                        },
+                    },
+                    {
+                        $project: {
+                            title: 1,
+                            body: 1,
+                            createdDate: 1,
+                            author: { $arrayElemAt: ["$authorDocument", 0] },
+                        },
+                    },
+                ])
+                .toArray();
+
+            // Clean up author property in each post object
+            posts = posts.map((post) => {
+                post.author = {
+                    username: post.author.username,
+                    avatar: new User(post.author, true).avatar,
+                };
+
+                return post;
+            });
+
+            return posts[0];
+        } catch (dbError) {
+            console.error("Database error in findSingleById:", dbError);
+            throw new Error("Database query failed");
         }
     }
 }
