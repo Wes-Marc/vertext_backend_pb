@@ -4,9 +4,11 @@ import md5 from "md5";
 import { getCollection } from "../db.js";
 
 class User {
-    constructor(data) {
+    constructor(data, getAvatar) {
         this.data = data;
         this.errors = [];
+        if (getAvatar == undefined) getAvatar = false;
+        if (getAvatar) this.getAvatar();
     }
 
     cleanUp() {
@@ -18,7 +20,7 @@ class User {
         this.data = {
             username: this.data.username.trim().toLowerCase(),
             email: this.data.email.trim().toLowerCase(),
-            password: this.data.password
+            password: this.data.password,
         };
     }
 
@@ -79,7 +81,7 @@ class User {
     }
 
     getAvatar() {
-        this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`;
+        return (this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`);
     }
 }
 
