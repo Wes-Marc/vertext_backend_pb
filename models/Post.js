@@ -44,32 +44,29 @@ class Post {
         }
     }
 
-    async findSingleById(id) {
-        if (typeof id !== "string" || !ObjectId.isValid(id)) return null;
-
+    async reusablePostQuery(uniqueOperations) {
         try {
             const postsCollection = getCollection("posts");
-            let posts = await postsCollection
-                .aggregate([
-                    { $match: { _id: ObjectId.createFromHexString(id) } },
-                    {
-                        $lookup: {
-                            from: "users",
-                            localField: "author",
-                            foreignField: "_id",
-                            as: "authorDocument",
-                        },
+            let aggOperations = uniqueOperations.concat([
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "_id",
+                        as: "authorDocument",
                     },
-                    {
-                        $project: {
-                            title: 1,
-                            body: 1,
-                            createdDate: 1,
-                            author: { $arrayElemAt: ["$authorDocument", 0] },
-                        },
+                },
+                {
+                    $project: {
+                        title: 1,
+                        body: 1,
+                        createdDate: 1,
+                        author: { $arrayElemAt: ["$authorDocument", 0] },
                     },
-                ])
-                .toArray();
+                },
+            ]);
+
+            let posts = await postsCollection.aggregate(aggOperations).toArray();
 
             // Clean up author property in each post object
             posts = posts.map((post) => {
@@ -81,11 +78,29 @@ class Post {
                 return post;
             });
 
+            return posts;
+        } catch (dbError) {
+            console.error("Database error in findSingleById:", dbError);
+            throw new Error("Database query failed");
+        }
+    }
+
+    async findSingleById(id) {
+        if (typeof id !== "string" || !ObjectId.isValid(id)) return null;
+
+        try {
+            const postsCollection = getCollection("posts");
+            let posts = await this.reusablePostQuery([{ $match: { _id: ObjectId.createFromHexString(id) } }]);
+
             return posts[0];
         } catch (dbError) {
             console.error("Database error in findSingleById:", dbError);
             throw new Error("Database query failed");
         }
+    }
+
+    async findByAuthorId(authorId) {
+        return await this.reusablePostQuery([{ $match: { author: authorId } }, { $sort: { createdDate: -1 } }]);
     }
 }
 

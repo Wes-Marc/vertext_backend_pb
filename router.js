@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { mustBeLoggedIn, home, register, login, logout } from "./controllers/userController.js";
+import { mustBeLoggedIn, home, register, login, logout, ifUserExists, profilePostsScreen } from "./controllers/userController.js";
 import { viewCreateScreen, create, viewSingle } from "./controllers/postController.js";
 
 const router = Router();
@@ -9,6 +9,9 @@ router.get("/", home);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
+
+// Profile related routes
+router.get("/profile/:username", ifUserExists, profilePostsScreen);
 
 // Post related routes
 router.get("/create-post", mustBeLoggedIn, viewCreateScreen);
