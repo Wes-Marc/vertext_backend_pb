@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Post from "../models/Post.js";
 
 export function mustBeLoggedIn(req, res, next) {
     if (req.session.user) {
@@ -55,5 +56,42 @@ export function home(req, res) {
             errors: req.flash("errors"),
             regErrors: req.flash("regErrors"),
         });
+    }
+}
+
+export async function ifUserExists(req, res, next) {
+    try {
+        const user = new User(req.params.username);
+        const userDocument = await user.findByUsername();
+
+        if (!userDocument) {
+            return res.status(404).render("404");
+        }
+        req.profileUser = userDocument;
+        next();
+    } catch (error) {
+        console.error("Error in ifUserExists:", error);
+        res.status(500).render("500");
+    }
+}
+
+export async function profilePostsScreen(req, res) {
+    // Retrive from post model posts by author id
+    try {
+        const post = new Post();
+        const posts = await post.findByAuthorId(req.profileUser._id);
+
+        if (!posts) {
+            return res.status(404).render("404");
+        }
+
+        res.render("profile", {
+            posts: posts,
+            profileUsername: req.profileUser.username,
+            profileAvatar: req.profileUser.avatar,
+        });
+    } catch (error) {
+        console.error("Error in profilePostsScreen:", error);
+        res.status(500).render("500");
     }
 }

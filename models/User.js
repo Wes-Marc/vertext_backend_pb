@@ -83,6 +83,26 @@ class User {
     getAvatar() {
         return (this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`);
     }
+
+    async findByUsername() {
+        try {
+            if (typeof this.data !== "string") return null;
+
+            const usersCollection = getCollection("users");
+            let user = await usersCollection.findOne({ username: this.data });
+            if (user) {
+                let userDoc = new User(user, true);
+                return (userDoc = {
+                    _id: userDoc.data._id,
+                    username: userDoc.data.username,
+                    avatar: userDoc.avatar,
+                });
+            }
+        } catch (dbError) {
+            console.error("Database error in User.findByUsername:", dbError);
+            throw new Error("Database operation failed");
+        }
+    }
 }
 
 export default User;
