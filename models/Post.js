@@ -1,6 +1,5 @@
 import { getCollection } from "../db.js";
 import { ObjectId } from "mongodb";
-import User from "./User.js";
 
 class Post {
     constructor(data, userId) {
@@ -35,8 +34,7 @@ class Post {
             if (!this.errors.length) {
                 // Save post into database
                 const postsCollection = getCollection("posts");
-                const result = await postsCollection.insertOne(this.data);
-                return result;
+                return await postsCollection.insertOne(this.data);
             }
         } catch (dbError) {
             console.error("Database error in Post.create:", dbError);
@@ -44,7 +42,7 @@ class Post {
         }
     }
 
-    async reusablePostQuery(uniqueOperations) {
+    static async reusablePostQuery(uniqueOperations) {
         try {
             const postsCollection = getCollection("posts");
             let aggOperations = uniqueOperations.concat([
@@ -72,7 +70,7 @@ class Post {
             posts = posts.map((post) => {
                 post.author = {
                     username: post.author.username,
-                    avatar: new User(post.author, true).avatar,
+                    avatar: post.author.avatar,
                 };
 
                 return post;
@@ -85,11 +83,10 @@ class Post {
         }
     }
 
-    async findSingleById(id) {
+    static async findSingleById(id) {
         if (typeof id !== "string" || !ObjectId.isValid(id)) return null;
 
         try {
-            const postsCollection = getCollection("posts");
             let posts = await this.reusablePostQuery([{ $match: { _id: ObjectId.createFromHexString(id) } }]);
 
             return posts[0];
@@ -99,7 +96,7 @@ class Post {
         }
     }
 
-    async findByAuthorId(authorId) {
+    static async findByAuthorId(authorId) {
         return await this.reusablePostQuery([{ $match: { author: authorId } }, { $sort: { createdDate: -1 } }]);
     }
 }
