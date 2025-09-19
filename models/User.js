@@ -4,11 +4,9 @@ import md5 from "md5";
 import { getCollection } from "../db.js";
 
 class User {
-    constructor(data, getAvatar) {
+    constructor(data) {
         this.data = data;
         this.errors = [];
-        if (getAvatar == undefined) getAvatar = false;
-        if (getAvatar) this.getAvatar();
     }
 
     cleanUp() {
@@ -54,7 +52,6 @@ class User {
         const attemptedUser = await usersCollection.findOne({ username: this.data.username });
         if (attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
             this.data = attemptedUser;
-            this.getAvatar();
             return this.data;
         } else {
             throw new Error("Invalid username / password.");
@@ -73,31 +70,26 @@ class User {
             // hash user password
             const salt = bcrypt.genSaltSync(10);
             this.data.password = bcrypt.hashSync(this.data.password, salt);
-            await usersCollection.insertOne(this.data);
-            this.getAvatar();
+            this.data.avatar = this.getAvatar();
+            return await usersCollection.insertOne(this.data);
         } else {
             throw this.errors;
         }
     }
 
     getAvatar() {
-        return (this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`);
+        return `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`;
     }
 
-    async findByUsername() {
+    static async findByUsername(username) {
         try {
-            if (typeof this.data !== "string") return null;
+            if (typeof username !== "string") return null;
 
             const usersCollection = getCollection("users");
-            let user = await usersCollection.findOne({ username: this.data });
-            if (user) {
-                let userDoc = new User(user, true);
-                return (userDoc = {
-                    _id: userDoc.data._id,
-                    username: userDoc.data.username,
-                    avatar: userDoc.avatar,
-                });
-            }
+            let user = await usersCollection.findOne({ username: username });
+            if (!user) return null;
+
+            return user;
         } catch (dbError) {
             console.error("Database error in User.findByUsername:", dbError);
             throw new Error("Database operation failed");
