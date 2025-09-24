@@ -20,7 +20,7 @@ export async function create(req, res) {
 
 export async function viewSingle(req, res) {
     try {
-        const dbPost = await Post.findSingleById(req.params.id);
+        const dbPost = await Post.findSingleById(req.params.id, req.visitorId);
 
         if (!dbPost) {
             return res.status(404).render("404");

@@ -42,7 +42,7 @@ class Post {
         }
     }
 
-    static async reusablePostQuery(uniqueOperations) {
+    static async reusablePostQuery(uniqueOperations, visitorId) {
         try {
             const postsCollection = getCollection("posts");
             let aggOperations = uniqueOperations.concat([
@@ -59,6 +59,7 @@ class Post {
                         title: 1,
                         body: 1,
                         createdDate: 1,
+                        authorId: "$author",
                         author: { $arrayElemAt: ["$authorDocument", 0] },
                     },
                 },
@@ -68,6 +69,8 @@ class Post {
 
             // Clean up author property in each post object
             posts = posts.map((post) => {
+                post.isVisitorOwner = post.authorId.equals(visitorId);
+
                 post.author = {
                     username: post.author.username,
                     avatar: post.author.avatar,
@@ -83,11 +86,11 @@ class Post {
         }
     }
 
-    static async findSingleById(id) {
+    static async findSingleById(id, visitorId) {
         if (typeof id !== "string" || !ObjectId.isValid(id)) return null;
 
         try {
-            let posts = await this.reusablePostQuery([{ $match: { _id: ObjectId.createFromHexString(id) } }]);
+            let posts = await this.reusablePostQuery([{ $match: { _id: ObjectId.createFromHexString(id) } }], visitorId);
 
             return posts[0];
         } catch (dbError) {
