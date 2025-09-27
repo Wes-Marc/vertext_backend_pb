@@ -32,3 +32,18 @@ export async function viewSingle(req, res) {
         res.status(500).render("500");
     }
 }
+
+export async function viewEditScreen(req, res) {
+    try {
+        const dbPost = await Post.findSingleById(req.params.id);
+
+        if (!dbPost) {
+            return res.status(404).render("404");
+        }
+
+        res.render("edit-post", { post: dbPost });
+    } catch (error) {
+        console.error("Error in viewEditScreen", error);
+        res.status(500).render("500");
+    }
+}
