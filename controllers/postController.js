@@ -47,3 +47,35 @@ export async function viewEditScreen(req, res) {
         res.status(500).render("500");
     }
 }
+
+export async function edit(req, res) {
+    try {
+        const post = new Post(req.body, req.visitorId, req.params.id);
+        const result = await post.update();
+
+        switch (result.status) {
+            case "success":
+                req.flash("success", "Post successfully updated.");
+                req.session.save(() => res.redirect(`/post/${req.params.id}/edit`));
+                break;
+            case "validation":
+                result.errors.forEach((error) => req.flash("errors", error));
+                req.session.save(() => res.redirect(`/post/${req.params.id / edit}`));
+                break;
+            case "forbidden":
+                req.flash("errors", "You do not have permission to perform that action.");
+                req.session.save(() => res.redirect("/"));
+                break;
+            case "notfound":
+                req.flash("errors", "Post not found.");
+                req.session.save(() => res.redirect("/"));
+            default:
+                req.flash("errors", "Somethig went wrong.");
+                req.session.save(() => res.redirect("/"));
+                break;
+        }
+    } catch (error) {
+        console.error("Error in edit", error);
+        res.status(500).render("500");
+    }
+}

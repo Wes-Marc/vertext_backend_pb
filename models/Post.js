@@ -2,10 +2,11 @@ import { getCollection } from "../db.js";
 import { ObjectId } from "mongodb";
 
 class Post {
-    constructor(data, userId) {
+    constructor(data, userId, requestedPostId) {
         this.data = data;
         this.errors = [];
         this.userId = userId;
+        this.requestedPostId = requestedPostId;
     }
 
     cleanUp() {
@@ -38,6 +39,44 @@ class Post {
             }
         } catch (dbError) {
             console.error("Database error in Post.create:", dbError);
+            throw new Error("Database operation failed");
+        }
+    }
+
+    async update() {
+        try {
+            const post = await Post.findSingleById(this.requestedPostId, this.userId);
+
+            if (!post) {
+                return { status: "notfound" }; // post doesn't exist
+            }
+
+            if (!post.isVisitorOwner) {
+                return { status: "forbidden" }; // user is not the owner
+            }
+
+            this.cleanUp();
+            this.validate();
+
+            if (this.errors.length) {
+                return { status: "validation", errors: this.errors };
+            }
+
+            // Update post
+            const postsCollection = getCollection("posts");
+            await postsCollection.findOneAndUpdate(
+                { _id: ObjectId.createFromHexString(this.requestedPostId) },
+                {
+                    $set: {
+                        title: this.data.title,
+                        body: this.data.body,
+                    },
+                },
+            );
+
+            return { status: "success" };
+        } catch (dbError) {
+            console.error("Database error in Post.update:", dbError);
             throw new Error("Database operation failed");
         }
     }
