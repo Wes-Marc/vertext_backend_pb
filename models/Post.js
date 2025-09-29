@@ -1,5 +1,6 @@
 import { getCollection } from "../db.js";
 import { ObjectId } from "mongodb";
+import sanitize from "sanitize-html";
 
 class Post {
     constructor(data, userId, requestedPostId) {
@@ -15,8 +16,8 @@ class Post {
 
         // Get rid of any bogus properties
         this.data = {
-            title: this.data.title.trim(),
-            body: this.data.body.trim(),
+            title: sanitize(this.data.title.trim(), { allowedTags: [], allowedAttributes: {} }),
+            body: sanitize(this.data.body.trim(), { allowedTags: [], allowedAttributes: {} }),
             createdDate: new Date(),
             author: ObjectId.createFromHexString(this.userId),
         };
@@ -28,15 +29,19 @@ class Post {
     }
 
     async create() {
-        this.cleanUp();
-        this.validate();
-
         try {
-            if (!this.errors.length) {
-                // Save post into database
-                const postsCollection = getCollection("posts");
-                return await postsCollection.insertOne(this.data);
+            this.cleanUp();
+            this.validate();
+
+            if (this.errors.length) {
+                return { status: "validation", errors: this.errors };
             }
+
+            // Save post into database
+            const postsCollection = getCollection("posts");
+            const info = await postsCollection.insertOne(this.data);
+
+            return { status: "success", postId: info.insertedId };
         } catch (dbError) {
             console.error("Database error in Post.create:", dbError);
             throw new Error("Database operation failed");

@@ -9,9 +9,13 @@ export async function create(req, res) {
         const post = new Post(req.body, req.session.user._id);
         const dbPost = await post.create();
 
-        if (dbPost) {
-            res.send("New post created.");
+        if (dbPost.status === "validation") {
+            dbPost.errors.forEach((error) => req.flash("errors", error));
+            req.session.save(() => res.redirect("/create-post"));
         }
+
+        req.flash("success", "New post successfully created.");
+        req.session.save(() => res.redirect(`/post/${dbPost.postId}`));
     } catch (error) {
         console.error("Unexpected error in create:", error);
         res.send(error);
@@ -35,13 +39,13 @@ export async function viewSingle(req, res) {
 
 export async function viewEditScreen(req, res) {
     try {
-        const dbPost = await Post.findSingleById(req.params.id);
+        const dbPost = await Post.findSingleById(req.params.id, req.visitorId);
 
         if (!dbPost) {
             return res.status(404).render("404");
         }
 
-        if (dbPost.authorId == req.visitorId) {
+        if (dbPost.isVisitorOwner) {
             res.render("edit-post", { post: dbPost });
         } else {
             req.flash("errors", "You do not have permission to perform that action.");
