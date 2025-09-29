@@ -2,6 +2,8 @@ import express from "express";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import flash from "connect-flash";
+import { marked as markdown } from "marked";
+import sanitize from "sanitize-html";
 import { client } from "./db.js";
 import router from "./router.js";
 
@@ -18,6 +20,14 @@ app.use(sessionOptions);
 app.use(flash());
 
 app.use((req, res, next) => {
+    // Make markdown function available within ejs templates
+    res.locals.filterUserHTML = (content) => {
+        return sanitize(markdown.parse(content), {
+            allowedTags: ["p", "br", "ul", "ol", "li", "strong", "bold", "i", "em", "h1", "h2", "h3", "h4", "h5", "h6"],
+            allowedAttributes: {},
+        });
+    };
+
     // Make all error and success flash messages available from all templates
     res.locals.errors = req.flash("errors");
     res.locals.success = req.flash("success");
