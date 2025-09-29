@@ -2,10 +2,11 @@ import { getCollection } from "../db.js";
 import { ObjectId } from "mongodb";
 
 class Post {
-    constructor(data, userId) {
+    constructor(data, userId, requestedPostId) {
         this.data = data;
         this.errors = [];
         this.userId = userId;
+        this.requestedPostId = requestedPostId;
     }
 
     cleanUp() {
@@ -42,7 +43,45 @@ class Post {
         }
     }
 
-    static async reusablePostQuery(uniqueOperations) {
+    async update() {
+        try {
+            const post = await Post.findSingleById(this.requestedPostId, this.userId);
+
+            if (!post) {
+                return { status: "notfound" }; // post doesn't exist
+            }
+
+            if (!post.isVisitorOwner) {
+                return { status: "forbidden" }; // user is not the owner
+            }
+
+            this.cleanUp();
+            this.validate();
+
+            if (this.errors.length) {
+                return { status: "validation", errors: this.errors };
+            }
+
+            // Update post
+            const postsCollection = getCollection("posts");
+            await postsCollection.findOneAndUpdate(
+                { _id: ObjectId.createFromHexString(this.requestedPostId) },
+                {
+                    $set: {
+                        title: this.data.title,
+                        body: this.data.body,
+                    },
+                },
+            );
+
+            return { status: "success" };
+        } catch (dbError) {
+            console.error("Database error in Post.update:", dbError);
+            throw new Error("Database operation failed");
+        }
+    }
+
+    static async reusablePostQuery(uniqueOperations, visitorId) {
         try {
             const postsCollection = getCollection("posts");
             let aggOperations = uniqueOperations.concat([
@@ -59,6 +98,7 @@ class Post {
                         title: 1,
                         body: 1,
                         createdDate: 1,
+                        authorId: "$author",
                         author: { $arrayElemAt: ["$authorDocument", 0] },
                     },
                 },
@@ -68,6 +108,8 @@ class Post {
 
             // Clean up author property in each post object
             posts = posts.map((post) => {
+                post.isVisitorOwner = post.authorId.equals(visitorId);
+
                 post.author = {
                     username: post.author.username,
                     avatar: post.author.avatar,
@@ -83,11 +125,11 @@ class Post {
         }
     }
 
-    static async findSingleById(id) {
+    static async findSingleById(id, visitorId) {
         if (typeof id !== "string" || !ObjectId.isValid(id)) return null;
 
         try {
-            let posts = await this.reusablePostQuery([{ $match: { _id: ObjectId.createFromHexString(id) } }]);
+            let posts = await this.reusablePostQuery([{ $match: { _id: ObjectId.createFromHexString(id) } }], visitorId);
 
             return posts[0];
         } catch (dbError) {
