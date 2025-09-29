@@ -41,7 +41,12 @@ export async function viewEditScreen(req, res) {
             return res.status(404).render("404");
         }
 
-        res.render("edit-post", { post: dbPost });
+        if (dbPost.authorId == req.visitorId) {
+            res.render("edit-post", { post: dbPost });
+        } else {
+            req.flash("errors", "You do not have permission to perform that action.");
+            req.session.save(() => res.redirect("/"));
+        }
     } catch (error) {
         console.error("Error in viewEditScreen", error);
         res.status(500).render("500");
