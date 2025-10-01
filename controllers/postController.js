@@ -69,7 +69,7 @@ export async function edit(req, res) {
                 break;
             case "validation":
                 result.errors.forEach((error) => req.flash("errors", error));
-                req.session.save(() => res.redirect(`/post/${req.params.id / edit}`));
+                req.session.save(() => res.redirect(`/post/${req.params.id}/edit`));
                 break;
             case "forbidden":
                 req.flash("errors", "You do not have permission to perform that action.");
@@ -85,6 +85,33 @@ export async function edit(req, res) {
         }
     } catch (error) {
         console.error("Error in edit", error);
+        res.status(500).render("500");
+    }
+}
+
+export async function deletePost(req, res) {
+    try {
+        const result = await Post.delete(req.params.id, req.visitorId);
+
+        switch (result.status) {
+            case "success":
+                req.flash("success", "Post successfully deleted.");
+                req.session.save(() => res.redirect(`/profile/${req.session.user.username}`));
+                break;
+            case "forbidden":
+                req.flash("errors", "You do not have permission to perform that action.");
+                req.session.save(() => res.redirect("/"));
+                break;
+            case "notfound":
+                req.flash("errors", "Post not found.");
+                req.session.save(() => res.redirect("/"));
+            default:
+                req.flash("errors", "Somethig went wrong.");
+                req.session.save(() => res.redirect("/"));
+                break;
+        }
+    } catch (error) {
+        console.error("Error in deletePost", error);
         res.status(500).render("500");
     }
 }
