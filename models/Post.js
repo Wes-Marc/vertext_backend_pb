@@ -86,6 +86,29 @@ class Post {
         }
     }
 
+    static async delete(postIdToDelete, currentUserId) {
+        try {
+            const post = await Post.findSingleById(postIdToDelete, currentUserId);
+
+            if (!post) {
+                return { status: "notfound" }; // post doesn't exist
+            }
+
+            if (!post.isVisitorOwner) {
+                return { status: "forbidden" }; // user is not the owner
+            }
+
+            // Delete post
+            const postsCollection = getCollection("posts");
+            await postsCollection.deleteOne({ _id: ObjectId.createFromHexString(postIdToDelete) });
+
+            return { status: "success" };
+        } catch (dbError) {
+            console.error("Database error in Post.delete:", dbError);
+            throw new Error("Database operation failed");
+        }
+    }
+
     static async reusablePostQuery(uniqueOperations, visitorId) {
         try {
             const postsCollection = getCollection("posts");
