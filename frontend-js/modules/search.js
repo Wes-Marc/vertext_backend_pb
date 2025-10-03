@@ -1,14 +1,22 @@
+import axios from "axios";
+
 export default class Search {
     constructor() {
         this.injectSearchElement();
         this.headerSearchIcon = document.querySelector(".header-search-icon");
         this.overlay = document.querySelector(".search-overlay");
         this.closeIcon = document.querySelector(".close-live-search");
+        this.inputField = document.querySelector("#live-search-field");
+        this.resultsArea = document.querySelector(".live-search-results");
+        this.loaderIcon = document.querySelector(".circle-loader");
+        this.typingWaitTimer;
+        this.previousValue = "";
         this.events();
     }
 
     events() {
-        this.closeIcon.addEventListener("click", (e) => this.closeOverlay());
+        this.inputField.addEventListener("keyup", () => this.keyPressHandler());
+        this.closeIcon.addEventListener("click", () => this.closeOverlay());
 
         this.headerSearchIcon.addEventListener("click", (e) => {
             e.preventDefault();
@@ -16,8 +24,37 @@ export default class Search {
         });
     }
 
+    keyPressHandler() {
+        let value = this.inputField.value;
+
+        if (value !== "" && value !== this.previousValue) {
+            clearTimeout(this.typingWaitTimer);
+            this.showLoaderIcon();
+            this.typingWaitTimer = setTimeout(() => this.sendRequest(), 3000);
+        }
+
+        this.previousValue = value;
+    }
+
+    async sendRequest() {
+        try {
+            const result = await axios.post("/search", { searchTerm: this.inputField.value });
+
+            if (result) {
+                console.log(result.data);
+            }
+        } catch (error) {
+            alert("This shit failed.");
+        }
+    }
+
+    showLoaderIcon() {
+        this.loaderIcon.classList.add("circle-loader--visible");
+    }
+
     openOverlay() {
         this.overlay.classList.add("search-overlay--visible");
+        setTimeout(() => this.inputField.focus(), 50);
     }
 
     closeOverlay() {
@@ -40,7 +77,7 @@ export default class Search {
             <div class="search-overlay-bottom">
                 <div class="container container--narrow py-3">
                     <div class="circle-loader"></div>
-                    <div class="live-search-results live-search-results--visible">
+                    <div class="live-search-results">
                         <div class="list-group shadow-sm">
                             <div class="list-group-item active"><strong>Search Results</strong> (4 items found)</div>
 

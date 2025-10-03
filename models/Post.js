@@ -109,34 +109,72 @@ class Post {
         }
     }
 
-    static async reusablePostQuery(uniqueOperations, visitorId) {
+    static async search(searchTerm) {
+        try {
+            if (typeof searchTerm === "string") {
+                const posts = await this.reusablePostQuery(
+                    [
+                        {
+                            $match: {
+                                $text: {
+                                    $search: searchTerm,
+                                },
+                            },
+                        },
+                    ],
+                    undefined,
+                    [
+                        {
+                            $sort: {
+                                score: {
+                                    $meta: "textScore",
+                                },
+                            },
+                        },
+                    ],
+                );
+
+                return posts;
+            } else {
+                return null;
+            }
+        } catch (dbError) {
+            console.error("Database error in Post.search:", dbError);
+            throw new Error("Database operation failed");
+        }
+    }
+
+    static async reusablePostQuery(uniqueOperations, visitorId, finalOperations = []) {
         try {
             const postsCollection = getCollection("posts");
-            let aggOperations = uniqueOperations.concat([
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "_id",
-                        as: "authorDocument",
+            let aggOperations = uniqueOperations
+                .concat([
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "author",
+                            foreignField: "_id",
+                            as: "authorDocument",
+                        },
                     },
-                },
-                {
-                    $project: {
-                        title: 1,
-                        body: 1,
-                        createdDate: 1,
-                        authorId: "$author",
-                        author: { $arrayElemAt: ["$authorDocument", 0] },
+                    {
+                        $project: {
+                            title: 1,
+                            body: 1,
+                            createdDate: 1,
+                            authorId: "$author",
+                            author: { $arrayElemAt: ["$authorDocument", 0] },
+                        },
                     },
-                },
-            ]);
+                ])
+                .concat(finalOperations);
 
             let posts = await postsCollection.aggregate(aggOperations).toArray();
 
             // Clean up author property in each post object
             posts = posts.map((post) => {
                 post.isVisitorOwner = post.authorId.equals(visitorId);
+                post.authorId = undefined;
 
                 post.author = {
                     username: post.author.username,
