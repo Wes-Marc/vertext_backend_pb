@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { mustBeLoggedIn, home, register, login, logout, ifUserExists, profilePostsScreen } from "./controllers/userController.js";
-import { viewCreateScreen, create, edit, deletePost, viewSingle, viewEditScreen } from "./controllers/postController.js";
+import { viewCreateScreen, create, edit, deletePost, search, viewSingle, viewEditScreen } from "./controllers/postController.js";
 
 const router = Router();
 
@@ -20,5 +20,6 @@ router.get("/post/:id", viewSingle);
 router.get("/post/:id/edit", mustBeLoggedIn, viewEditScreen);
 router.post("/post/:id/edit", mustBeLoggedIn, edit);
 router.post("/post/:id/delete", mustBeLoggedIn, deletePost);
+router.post("/search", search);
 
 export default router;

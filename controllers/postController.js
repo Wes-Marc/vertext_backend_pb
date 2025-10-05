@@ -115,3 +115,18 @@ export async function deletePost(req, res) {
         res.status(500).render("500");
     }
 }
+
+export async function search(req, res) {
+    try {
+        const posts = await Post.search(req.body.searchTerm);
+
+        if (!posts) {
+            res.json([]);
+        }
+
+        res.json(posts);
+    } catch (error) {
+        console.error("Error in search", error);
+        res.status(500).render("500");
+    }
+}
