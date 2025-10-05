@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { mustBeLoggedIn, home, register, login, logout, ifUserExists, profilePostsScreen } from "./controllers/userController.js";
 import { viewCreateScreen, create, edit, deletePost, search, viewSingle, viewEditScreen } from "./controllers/postController.js";
+import { addFollow } from "./controllers/followController.js";
 
 const router = Router();
 
@@ -21,5 +22,8 @@ router.get("/post/:id/edit", mustBeLoggedIn, viewEditScreen);
 router.post("/post/:id/edit", mustBeLoggedIn, edit);
 router.post("/post/:id/delete", mustBeLoggedIn, deletePost);
 router.post("/search", search);
+
+// Follow related routes
+router.post("/addFollow/:username", mustBeLoggedIn, addFollow);
 
 export default router;
