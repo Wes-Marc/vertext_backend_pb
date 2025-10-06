@@ -1,6 +1,25 @@
 import { Router } from "express";
-import { mustBeLoggedIn, home, register, login, logout, ifUserExists, sharedProfileData, profilePostsScreen, profileFollowersScreen } from "./controllers/userController.js";
-import { viewCreateScreen, create, edit, deletePost, search, viewSingle, viewEditScreen } from "./controllers/postController.js";
+import {
+    mustBeLoggedIn,
+    home,
+    register,
+    login,
+    logout,
+    ifUserExists,
+    sharedProfileData,
+    profilePostsScreen,
+    profileFollowersScreen,
+    profileFollowingScreen,
+} from "./controllers/userController.js";
+import {
+    viewCreateScreen,
+    create,
+    edit,
+    deletePost,
+    search,
+    viewSingle,
+    viewEditScreen,
+} from "./controllers/postController.js";
 import { addFollow, removeFollow } from "./controllers/followController.js";
 
 const router = Router();
@@ -14,6 +33,7 @@ router.post("/logout", logout);
 // Profile related routes
 router.get("/profile/:username", ifUserExists, sharedProfileData, profilePostsScreen);
 router.get("/profile/:username/followers", ifUserExists, sharedProfileData, profileFollowersScreen);
+router.get("/profile/:username/following", ifUserExists, sharedProfileData, profileFollowingScreen);
 
 // Post related routes
 router.get("/create-post", mustBeLoggedIn, viewCreateScreen);

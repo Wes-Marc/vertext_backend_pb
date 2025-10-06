@@ -28,7 +28,10 @@ class Follow {
             // If already following, can't follow again.
             // If not following, can't stop following.
             const followsCollection = getCollection("follows");
-            let doesFollowAlreadyExist = await followsCollection.findOne({ followedId: this.followedId, authorId: ObjectId.createFromHexString(this.authorId) });
+            let doesFollowAlreadyExist = await followsCollection.findOne({
+                followedId: this.followedId,
+                authorId: ObjectId.createFromHexString(this.authorId),
+            });
 
             if (action === "create") {
                 if (doesFollowAlreadyExist) {
@@ -62,7 +65,10 @@ class Follow {
             }
 
             const followsCollection = getCollection("follows");
-            const info = await followsCollection.insertOne({ followedId: this.followedId, authorId: ObjectId.createFromHexString(this.authorId) });
+            const info = await followsCollection.insertOne({
+                followedId: this.followedId,
+                authorId: ObjectId.createFromHexString(this.authorId),
+            });
 
             return { status: "success", info: info };
         } catch (dbError) {
@@ -81,7 +87,10 @@ class Follow {
             }
 
             const followsCollection = getCollection("follows");
-            const info = await followsCollection.deleteOne({ followedId: this.followedId, authorId: ObjectId.createFromHexString(this.authorId) });
+            const info = await followsCollection.deleteOne({
+                followedId: this.followedId,
+                authorId: ObjectId.createFromHexString(this.authorId),
+            });
 
             return { status: "success", info: info };
         } catch (dbError) {
@@ -93,7 +102,10 @@ class Follow {
     static async isVisitorFollowing(followedId, visitorId) {
         try {
             const followsCollection = getCollection("follows");
-            const followDoc = await followsCollection.findOne({ followedId: followedId, authorId: ObjectId.createFromHexString(visitorId) });
+            const followDoc = await followsCollection.findOne({
+                followedId: followedId,
+                authorId: ObjectId.createFromHexString(visitorId),
+            });
 
             if (!followDoc) {
                 return false;
@@ -133,6 +145,60 @@ class Follow {
         } catch (dbError) {
             console.error("Database error in Follow.getFollowersById:", dbError);
             throw new Error("Database operation failed");
+        }
+    }
+
+    static async getFollowingById(id) {
+        try {
+            const followsCollection = getCollection("follows");
+            const following = await followsCollection
+                .aggregate([
+                    { $match: { authorId: id } },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "followedId",
+                            foreignField: "_id",
+                            as: "userDoc",
+                        },
+                    },
+                    {
+                        $project: {
+                            username: { $arrayElemAt: ["$userDoc.username", 0] },
+                            avatar: { $arrayElemAt: ["$userDoc.avatar", 0] },
+                        },
+                    },
+                ])
+                .toArray();
+
+            return following;
+        } catch (dbError) {
+            console.error("Database error in Follow.getFollowersById:", dbError);
+            throw new Error("Database operation failed");
+        }
+    }
+
+    static async countFollowersById(id) {
+        try {
+            const followsCollection = getCollection("follows");
+            const followerCount = await followsCollection.countDocuments({ followedId: id });
+
+            return followerCount;
+        } catch (dbError) {
+            console.error("Database error in countPostsByAuthor:", dbError);
+            throw new Error("Database query failed");
+        }
+    }
+
+    static async countFollowingById(id) {
+        try {
+            const followsCollection = getCollection("follows");
+            const followingCount = await followsCollection.countDocuments({ authorId: id });
+
+            return followingCount;
+        } catch (dbError) {
+            console.error("Database error in countPostsByAuthor:", dbError);
+            throw new Error("Database query failed");
         }
     }
 }
