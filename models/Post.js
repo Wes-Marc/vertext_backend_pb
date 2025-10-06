@@ -76,7 +76,7 @@ class Post {
                         title: this.data.title,
                         body: this.data.body,
                     },
-                },
+                }
             );
 
             return { status: "success" };
@@ -131,7 +131,7 @@ class Post {
                                 },
                             },
                         },
-                    ],
+                    ]
                 );
 
                 return posts;
@@ -195,7 +195,10 @@ class Post {
         if (typeof id !== "string" || !ObjectId.isValid(id)) return null;
 
         try {
-            let posts = await this.reusablePostQuery([{ $match: { _id: ObjectId.createFromHexString(id) } }], visitorId);
+            let posts = await this.reusablePostQuery(
+                [{ $match: { _id: ObjectId.createFromHexString(id) } }],
+                visitorId
+            );
 
             return posts[0];
         } catch (dbError) {
@@ -206,6 +209,28 @@ class Post {
 
     static async findByAuthorId(authorId) {
         return await this.reusablePostQuery([{ $match: { author: authorId } }, { $sort: { createdDate: -1 } }]);
+    }
+
+    static async countPostsByAuthor(id) {
+        try {
+            const postsCollection = getCollection("posts");
+            const postCount = await postsCollection.countDocuments({ author: id });
+
+            return postCount;
+        } catch (dbError) {
+            console.error("Database error in countPostsByAuthor:", dbError);
+            throw new Error("Database query failed");
+        }
+    }
+
+    static async getFeed(id) {
+        // Create an array of the user ids the current user follows
+        const followsCollection = getCollection("follows");
+        let followedUsers = await followsCollection.find({ authorId: ObjectId.createFromHexString(id) }).toArray();
+        followedUsers = followedUsers.map((followDoc) => followDoc.followedId);
+
+        // Look for posts where the author is in the above array of followed users
+        return this.reusablePostQuery([{ $match: { author: { $in: followedUsers } } }, { $sort: { createdDate: -1 } }]);
     }
 }
 

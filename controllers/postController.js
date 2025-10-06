@@ -12,6 +12,7 @@ export async function create(req, res) {
         if (dbPost.status === "validation") {
             dbPost.errors.forEach((error) => req.flash("errors", error));
             req.session.save(() => res.redirect("/create-post"));
+            return;
         }
 
         req.flash("success", "New post successfully created.");
