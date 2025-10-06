@@ -222,6 +222,16 @@ class Post {
             throw new Error("Database query failed");
         }
     }
+
+    static async getFeed(id) {
+        // Create an array of the user ids the current user follows
+        const followsCollection = getCollection("follows");
+        let followedUsers = await followsCollection.find({ authorId: ObjectId.createFromHexString(id) }).toArray();
+        followedUsers = followedUsers.map((followDoc) => followDoc.followedId);
+
+        // Look for posts where the author is in the above array of followed users
+        return this.reusablePostQuery([{ $match: { author: { $in: followedUsers } } }, { $sort: { createdDate: -1 } }]);
+    }
 }
 
 export default Post;

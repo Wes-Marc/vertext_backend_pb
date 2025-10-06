@@ -56,9 +56,11 @@ export async function register(req, res) {
     }
 }
 
-export function home(req, res) {
+export async function home(req, res) {
     if (req.session.user) {
-        res.render("home-dashboard");
+        // Fetch feed of posts for current user
+        const posts = await Post.getFeed(req.session.user._id);
+        res.render("home-dashboard", { posts: posts });
     } else {
         res.render("home-guest", { regErrors: req.flash("regErrors") });
     }
