@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Post from "../models/Post.js";
+import Follow from "../models/Follow.js";
 
 export function mustBeLoggedIn(req, res, next) {
     if (req.session.user) {
@@ -84,6 +85,20 @@ export async function ifUserExists(req, res, next) {
     }
 }
 
+export async function sharedProfileData(req, res, next) {
+    let isVisitorsProfile = false;
+    let isFollowing = false;
+
+    if (req.session.user) {
+        isVisitorsProfile = req.profileUser._id.equals(req.session.user._id);
+        isFollowing = await Follow.isVisitorFollowing(req.profileUser._id, req.visitorId);
+    }
+
+    req.isVisitorsProfile = isVisitorsProfile;
+    req.isFollowing = isFollowing;
+    next();
+}
+
 export async function profilePostsScreen(req, res) {
     // Retrive from post model posts by author id
     try {
@@ -97,6 +112,8 @@ export async function profilePostsScreen(req, res) {
             posts: posts,
             profileUsername: req.profileUser.username,
             profileAvatar: req.profileUser.avatar,
+            isFollowing: req.isFollowing,
+            isVisitorsProfile: req.isVisitorsProfile,
         });
     } catch (error) {
         console.error("Error in profilePostsScreen:", error);

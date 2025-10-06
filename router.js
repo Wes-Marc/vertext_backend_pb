@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { mustBeLoggedIn, home, register, login, logout, ifUserExists, profilePostsScreen } from "./controllers/userController.js";
+import { mustBeLoggedIn, home, register, login, logout, ifUserExists, sharedProfileData, profilePostsScreen } from "./controllers/userController.js";
 import { viewCreateScreen, create, edit, deletePost, search, viewSingle, viewEditScreen } from "./controllers/postController.js";
-import { addFollow } from "./controllers/followController.js";
+import { addFollow, removeFollow } from "./controllers/followController.js";
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.post("/login", login);
 router.post("/logout", logout);
 
 // Profile related routes
-router.get("/profile/:username", ifUserExists, profilePostsScreen);
+router.get("/profile/:username", ifUserExists, sharedProfileData, profilePostsScreen);
 
 // Post related routes
 router.get("/create-post", mustBeLoggedIn, viewCreateScreen);
@@ -25,5 +25,6 @@ router.post("/search", search);
 
 // Follow related routes
 router.post("/addFollow/:username", mustBeLoggedIn, addFollow);
+router.post("/removeFollow/:username", mustBeLoggedIn, removeFollow);
 
 export default router;
