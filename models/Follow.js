@@ -105,6 +105,36 @@ class Follow {
             throw new Error("Database operation failed");
         }
     }
+
+    static async getFollowersById(id) {
+        try {
+            const followsCollection = getCollection("follows");
+            const followers = await followsCollection
+                .aggregate([
+                    { $match: { followedId: id } },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "authorId",
+                            foreignField: "_id",
+                            as: "userDoc",
+                        },
+                    },
+                    {
+                        $project: {
+                            username: { $arrayElemAt: ["$userDoc.username", 0] },
+                            avatar: { $arrayElemAt: ["$userDoc.avatar", 0] },
+                        },
+                    },
+                ])
+                .toArray();
+
+            return followers;
+        } catch (dbError) {
+            console.error("Database error in Follow.getFollowersById:", dbError);
+            throw new Error("Database operation failed");
+        }
+    }
 }
 
 export default Follow;

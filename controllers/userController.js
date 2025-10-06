@@ -120,3 +120,19 @@ export async function profilePostsScreen(req, res) {
         res.status(500).render("500");
     }
 }
+
+export async function profileFollowersScreen(req, res) {
+    try {
+        const followers = await Follow.getFollowersById(req.profileUser._id);
+        res.render("profile-followers", {
+            followers: followers,
+            profileUsername: req.profileUser.username,
+            profileAvatar: req.profileUser.avatar,
+            isFollowing: req.isFollowing,
+            isVisitorsProfile: req.isVisitorsProfile,
+        });
+    } catch (error) {
+        console.error("Error in profileFollowersScreen:", error);
+        res.status(500).render("500");
+    }
+}
