@@ -3,12 +3,18 @@ export default class Chat {
         this.openedYet = false;
         this.chatWrapper = document.querySelector("#chat-wrapper");
         this.injectHTML();
+        this.chatField = document.querySelector("#chatField");
+        this.chatForm = document.querySelector("#chatForm");
         this.openIcon = document.querySelector(".header-chat-icon");
         this.closeIcon = document.querySelector(".chat-title-bar-close");
         this.events();
     }
 
     events() {
+        this.chatForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            this.sendMessageToServer();
+        });
         this.openIcon.addEventListener("click", () => this.showChat());
         this.closeIcon.addEventListener("click", () => this.hideChat());
     }
@@ -37,6 +43,15 @@ export default class Chat {
     }
 
     openConnection() {
-        alert("Opening the bullshit");
+        this.socket = io();
+        this.socket.on("chatMessageFromServer", (data) => {
+            alert(data.message);
+        });
+    }
+
+    sendMessageToServer() {
+        this.socket.emit("chatMessageFromBrowser", { message: this.chatField.value });
+        this.chatField.value = "";
+        this.chatField.focus();
     }
 }

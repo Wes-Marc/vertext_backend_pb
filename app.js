@@ -6,6 +6,8 @@ import { marked as markdown } from "marked";
 import sanitize from "sanitize-html";
 import { client } from "./db.js";
 import router from "./router.js";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 const app = express();
 const sessionOptions = session({
@@ -53,9 +55,19 @@ app.set("view engine", "ejs");
 
 app.use("/", router);
 
+const server = createServer(app);
+
+const io = new Server(server);
+
+io.on("connection", (socket) => {
+    socket.on("chatMessageFromBrowser", (data) => {
+        io.emit("chatMessageFromServer", { message: data.message });
+    });
+});
+
 async function start() {
     await client.connect();
-    app.listen(process.env.PORT);
+    server.listen(process.env.PORT);
 }
 
 start();
