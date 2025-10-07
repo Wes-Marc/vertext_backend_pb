@@ -59,10 +59,24 @@ const server = createServer(app);
 
 const io = new Server(server);
 
+io.use((socket, next) => {
+    sessionOptions(socket.request, socket.request.res || {}, next);
+});
+
 io.on("connection", (socket) => {
-    socket.on("chatMessageFromBrowser", (data) => {
-        io.emit("chatMessageFromServer", { message: data.message });
-    });
+    if (socket.request.session.user) {
+        const user = socket.request.session.user;
+
+        socket.emit("welcome", { username: user.username, avatar: user.avatar });
+
+        socket.on("chatMessageFromBrowser", (data) => {
+            socket.broadcast.emit("chatMessageFromServer", {
+                message: sanitize(data.message, { allowedTags: [], allowedAttributes: {} }),
+                username: user.username,
+                avatar: user.avatar,
+            });
+        });
+    }
 });
 
 async function start() {
