@@ -126,6 +126,7 @@ export async function profilePostsScreen(req, res) {
         }
 
         res.render("profile", {
+            title: `Profile for ${req.profileUser.username}`,
             currentPage: "posts",
             posts: posts,
             profileUsername: req.profileUser.username,
