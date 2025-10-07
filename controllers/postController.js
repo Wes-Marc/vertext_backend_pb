@@ -31,7 +31,7 @@ export async function viewSingle(req, res) {
             return res.status(404).render("404");
         }
 
-        res.render("single-post-screen", { post: dbPost });
+        res.render("single-post-screen", { post: dbPost, title: dbPost.title });
     } catch (error) {
         console.error("Error in viewSingle:", error);
         res.status(500).render("500");
