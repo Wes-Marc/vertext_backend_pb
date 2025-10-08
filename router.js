@@ -6,6 +6,8 @@ import {
     login,
     logout,
     ifUserExists,
+    doesUsernameExist,
+    doesEmailExist,
     sharedProfileData,
     profilePostsScreen,
     profileFollowersScreen,
@@ -29,6 +31,8 @@ router.get("/", home);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
+router.post("/doesUsernameExist", doesUsernameExist);
+router.post("/doesEmailExist", doesEmailExist);
 
 // Profile related routes
 router.get("/profile/:username", ifUserExists, sharedProfileData, profilePostsScreen);

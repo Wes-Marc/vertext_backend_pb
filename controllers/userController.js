@@ -66,6 +66,35 @@ export async function home(req, res) {
     }
 }
 
+export async function doesUsernameExist(req, res) {
+    try {
+        const userDocument = await User.findByUsername(req.body.username);
+        if (!userDocument) {
+            return res.json(false);
+        }
+
+        return res.json(true);
+    } catch (error) {
+        console.error("Error in doesUsernameExist:", error);
+        res.status(500).render("500");
+    }
+}
+
+export async function doesEmailExist(req, res) {
+    try {
+        const emailBool = await User.doesEmailExist(req.body.email);
+
+        if (!emailBool) {
+            return res.json(false);
+        }
+
+        return res.json(true);
+    } catch (error) {
+        console.error("Error in doesUsernameExist:", error);
+        res.status(500).render("500");
+    }
+}
+
 export async function ifUserExists(req, res, next) {
     try {
         const userDocument = await User.findByUsername(req.params.username);
