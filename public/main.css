@@ -383,3 +383,8 @@ textarea.tall-textarea {
     outline: none;
     font-size: 0.75rem;
 }
+
+a > *,
+button > * {
+    pointer-events: none;
+}
